@@ -53,7 +53,11 @@ select = [
     "RUF",    # собственные правила Ruff
     "FIX002", # todos searching
 ]
-ignore = ["D100", "UP017"]
+ignore = [
+    "D100",  # missing docstrings in public module
+    "UP017", # datetime.UTC aliase
+    "N815",  # mixedCase variables naming
+]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
