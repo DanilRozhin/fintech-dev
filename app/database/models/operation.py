@@ -1,8 +1,9 @@
 import datetime
 import uuid
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, String, func
+from sqlalchemy import DateTime, Enum, Numeric, String, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,8 +24,8 @@ class OperationOrm(Base):
         primary_key=True,
         nullable=False,
     )
-    amount: Mapped[str] = mapped_column(
-        String(255),
+    amount: Mapped[Decimal] = mapped_column(
+        Numeric(precision=12, scale=2),
         nullable=False,
     )
     currency: Mapped[CurrencyType] = mapped_column(
