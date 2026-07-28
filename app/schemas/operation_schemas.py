@@ -40,7 +40,7 @@ class OperationRequest(OperationBase):
     pass
 
 
-class OperationResponse(OperationBase):
+class OperationSingle(OperationBase):
     status: StatusType = Field(description="Operation status")
     providerPaymentId: uuid.UUID = Field(description="Provider payment ID")
     created_at: datetime.datetime = Field(description="Time the record was created")
