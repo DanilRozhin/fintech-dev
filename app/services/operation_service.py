@@ -36,7 +36,7 @@ class OperationService:
         if operation is not None:
             return operation
         raise OperationError(
-            detail="Operation with this ID does not exist",
+            detail="Operation with this ID not found",
             status_code=status.HTTP_404_NOT_FOUND,
             extra={
                 "service": "operation_service",
