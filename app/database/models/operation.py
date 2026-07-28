@@ -1,12 +1,16 @@
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from app.database.database import Base
 from app.database.enums import StatusType
 from app.database.mixins import TimestampMixin
+
+if TYPE_CHECKING:
+    from app.database.models.operation_event import OperationEventOrm
 
 
 class OperationOrm(Base, TimestampMixin):
@@ -15,6 +19,7 @@ class OperationOrm(Base, TimestampMixin):
     operationId: Mapped[str] = mapped_column(
         String(255),
         primary_key=True,
+        nullable=False,
     )
     amount: Mapped[str] = mapped_column(
         String(255),
@@ -39,4 +44,8 @@ class OperationOrm(Base, TimestampMixin):
     providerPaymentId: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         nullable=True,
+    )
+
+    events: Mapped[list["OperationEventOrm"]] = relationship(
+        back_populates="operation",
     )
