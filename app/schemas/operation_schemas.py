@@ -33,11 +33,18 @@ class OperationSingleResponse(BaseModel):
     description: str | None = Field(description="Operation description")
     status: StatusType = Field(description="Operation status")
     providerPaymentId: uuid.UUID | None = Field(description="Provider payment ID")
-    created_at: datetime.datetime = Field(description="Time the record was created")
-    updated_at: datetime.datetime = Field(description="Time the record was lastly updated")
+    createdAt: datetime.datetime = Field(description="Time the record was created")
+    updatedAt: datetime.datetime = Field(description="Time the record was lastly updated")
 
     model_config = ConfigDict(from_attributes=True)
 
     @field_serializer("amount")
     def serialize_amount(self, value: Decimal) -> str:
-        return f"{value:.2f}"
+        return str(value)
+
+
+class OperationSubmitResponse(BaseModel):
+    operation: OperationSingleResponse | None = Field(description="Operation details")
+    is_submitted: bool = Field(description="Whether the operation was submitted or not")
+
+    model_config = ConfigDict(from_attributes=True)
