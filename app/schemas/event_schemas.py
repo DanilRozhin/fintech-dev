@@ -8,7 +8,7 @@ from app.database.enums import EventType, StatusType
 class OperationEventSingle(BaseModel):
     eventId: int = Field(description="Event ID")
     type: EventType = Field(description="Event type")
-    fromStatus: StatusType = Field(description="Past status of the event")
+    fromStatus: StatusType | None = Field(description="Past status of the event")
     toStatus: StatusType = Field(description="Updated status of the event")
     message: str = Field(description="Event message, describing the event")
     occurredAt: datetime.datetime = Field(description="Time the event occurred at")

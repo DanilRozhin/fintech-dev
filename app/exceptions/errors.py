@@ -40,3 +40,15 @@ class DatabaseError(BaseAppError):
         extra: dict[str, Any] | None = None,
     ):
         super().__init__(detail=detail, status_code=status_code, extra=extra)
+
+
+class ValidationObjectError(BaseAppError):
+    """Validation object related error"""
+
+    def __init__(
+        self,
+        detail: str = "Validation object error occurred",
+        status_code: int = status.HTTP_422_UNPROCESSABLE_CONTENT,
+        extra: dict[str, Any] | None = None,
+    ):
+        super().__init__(detail=detail, status_code=status_code, extra=extra)

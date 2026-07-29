@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:15.12
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${APP_CONFIG__DB__NAME}
+      POSTGRES_USER: ${APP_CONFIG__DB__USER}
+      POSTGRES_PASSWORD: ${APP_CONFIG__DB__PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${APP_CONFIG__DB__PORT}:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${APP_CONFIG__DB__USER}", "-d", "${APP_CONFIG__DB__NAME}"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  postgres_data:

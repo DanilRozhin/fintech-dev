@@ -1,14 +1,15 @@
 import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.database import Base
 from app.database.enums import EventType, StatusType
 
 if TYPE_CHECKING:
-    from app.database.models import OperationOrm
+    from app.database.models.operation import OperationOrm
+    from app.database.models.receipt_record import ReceiptRecordOrm
 
 
 class OperationEventOrm(Base):
@@ -17,7 +18,6 @@ class OperationEventOrm(Base):
     eventId: Mapped[int] = mapped_column(
         primary_key=True,
         autoincrement=True,
-        nullable=False,
     )
     operationId: Mapped[str] = mapped_column(
         String(255),
@@ -27,6 +27,7 @@ class OperationEventOrm(Base):
             ondelete="CASCADE",
         ),
         nullable=False,
+        index=True,
     )
     type: Mapped[EventType] = mapped_column(
         Enum(
@@ -36,13 +37,13 @@ class OperationEventOrm(Base):
         ),
         nullable=False,
     )
-    fromStatus: Mapped[StatusType] = mapped_column(
+    fromStatus: Mapped[StatusType | None] = mapped_column(
         Enum(
             StatusType,
             name="operation_event_from_status_enum",
             check_constraint=True,
         ),
-        nullable=False,
+        nullable=True,
     )
     toStatus: Mapped[StatusType] = mapped_column(
         Enum(
@@ -53,7 +54,7 @@ class OperationEventOrm(Base):
         nullable=False,
     )
     message: Mapped[str] = mapped_column(
-        String(255),
+        Text,
         nullable=False,
     )
     occurredAt: Mapped[datetime.datetime] = mapped_column(
@@ -64,4 +65,7 @@ class OperationEventOrm(Base):
 
     operation: Mapped["OperationOrm"] = relationship(
         back_populates="events",
+    )
+    receiptRecord: Mapped["ReceiptRecordOrm"] = relationship(
+        back_populates="event",
     )

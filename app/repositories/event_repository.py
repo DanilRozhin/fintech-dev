@@ -1,11 +1,12 @@
 import logging
 
+from pydantic import ValidationError
 from sqlalchemy import asc, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import OperationEventOrm
-from app.exceptions import BaseAppError, DatabaseError
+from app.exceptions import BaseAppError, DatabaseError, ValidationObjectError
 from app.schemas import OperationEventSingle
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,14 @@ class EventRepository:
             extra.update(original_error=str(e))
             raise DatabaseError(
                 detail="Failed to get events",
+                extra=extra,
+            ) from e
+
+        except ValidationError as e:
+            await self.session.rollback()
+            extra.update(original_error=str(e))
+            raise ValidationObjectError(
+                detail="Failed to validate object before returning",
                 extra=extra,
             ) from e
 
