@@ -25,7 +25,7 @@ class OperationOrm(Base):
         nullable=False,
     )
     amount: Mapped[Decimal] = mapped_column(
-        Numeric(precision=12, scale=2),
+        Numeric(),
         nullable=False,
     )
     currency: Mapped[CurrencyType] = mapped_column(
@@ -47,6 +47,7 @@ class OperationOrm(Base):
             check_constraint=True,
         ),
         nullable=False,
+        server_default=StatusType.CREATED.value,
     )
     providerPaymentId: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
