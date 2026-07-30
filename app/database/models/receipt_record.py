@@ -43,11 +43,11 @@ class ReceiptRecordOrm(Base):
         ),
         nullable=False,
     )
-    providerMessage: Mapped[str | None] = mapped_column(
+    message: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
-    occurredAtProvider: Mapped[datetime.datetime] = mapped_column(
+    occurredAt: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
     )
