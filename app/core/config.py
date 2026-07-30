@@ -29,11 +29,15 @@ class DatabaseConfig(BaseModel):
 
 class EnvironmentConfig(BaseModel):
     environment: str
+    logging_level: str
 
 
-class APIPrefix(BaseModel):
-    prefix: str = "/api"
-    v1: str = "/v1"
+class ProviderConfig(BaseModel):
+    url: str
+    max_attempts: int = 5
+    base_delay_seconds: float = 0.5
+    max_delay_seconds: float = 10.0
+    jitter_seconds: float = 0.5
 
 
 class Settings(BaseSettings):
@@ -49,7 +53,7 @@ class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     db: DatabaseConfig
     env: EnvironmentConfig
-    api: APIPrefix = APIPrefix()
+    provider: ProviderConfig
 
 
 settings = Settings()
