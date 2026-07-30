@@ -5,9 +5,13 @@ from fastapi import APIRouter, Depends, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_provider_client
+from app.clients import ProviderClient
+from app.core.background_tasks import track_task
 from app.database import db_helper
+from app.database.enums import TriggerType
 from app.schemas import OperationCreate, OperationEventResponse, OperationSingleResponse
-from app.services import EventService, OperationService
+from app.services import EventService, OperationService, run_provider_call_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +44,7 @@ async def create_operation(
 async def submit_operation(
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     operation_id: str,
+    provider_client: Annotated[ProviderClient, Depends(get_provider_client)],
     response: Response,
 ):
     extra = {"service": "operation_submit_endpoint"}
@@ -48,6 +53,13 @@ async def submit_operation(
     if submit_response.is_submitted:
         logger.debug("Operation submitted", extra=extra)
         response.status_code = status.HTTP_202_ACCEPTED
+        track_task(
+            run_provider_call_in_background(
+                operation_id=operation_id,
+                triggered_by=TriggerType.SUBMIT,
+                provider_client=provider_client,
+            )
+        )
         return JSONResponse(
             content=submit_response.operation.model_dump(mode="json"),
             status_code=status.HTTP_202_ACCEPTED,

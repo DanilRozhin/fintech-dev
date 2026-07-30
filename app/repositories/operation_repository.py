@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class OperationRepository:
     def __init__(self, session: AsyncSession):
-        self.session = session
+        self._session = session
 
     async def create_operation(self, operation_request: OperationCreate) -> OperationSingleResponse | None:
         service_name = str(self.__class__.__name__)
@@ -30,13 +30,13 @@ class OperationRepository:
                 description=operation_request.description,
                 status=StatusType.CREATED,
             )
-            self.session.add(operation)
+            self._session.add(operation)
 
             try:
-                await self.session.flush()
+                await self._session.flush()
 
             except IntegrityError:
-                await self.session.rollback()
+                await self._session.rollback()
                 return None
 
             event = OperationEventOrm(
@@ -46,11 +46,11 @@ class OperationRepository:
                 toStatus=StatusType.CREATED,
                 message="Operation created",
             )
-            self.session.add(event)
+            self._session.add(event)
             operation_response = OperationSingleResponse.model_validate(operation)
 
         except SQLAlchemyError as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise DatabaseError(
                 detail="Failed to create new operation",
@@ -58,7 +58,7 @@ class OperationRepository:
             ) from e
 
         except ValidationError as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise ValidationObjectError(
                 detail="Failed to validate object before returning",
@@ -66,14 +66,14 @@ class OperationRepository:
             ) from e
 
         except Exception as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise BaseAppError(
                 detail="Unexpected error while creating new operation",
                 extra=extra,
             ) from e
 
-        await self.session.commit()
+        await self._session.commit()
         return operation_response
 
     async def get_operation_by_id(self, operation_id: str) -> OperationSingleResponse | None:
@@ -82,13 +82,13 @@ class OperationRepository:
         logger.debug("Getting operation by id", extra=extra)
 
         try:
-            operation = await self.session.get(OperationOrm, operation_id)
+            operation = await self._session.get(OperationOrm, operation_id)
             if operation is not None:
                 return OperationSingleResponse.model_validate(operation)
             return None
 
         except SQLAlchemyError as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise DatabaseError(
                 detail="Failed to get operation by id",
@@ -96,7 +96,7 @@ class OperationRepository:
             ) from e
 
         except ValidationError as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise ValidationObjectError(
                 detail="Failed to validate object before returning",
@@ -104,7 +104,7 @@ class OperationRepository:
             ) from e
 
         except Exception as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise BaseAppError(
                 detail="Unexpected error while getting operation by id",
@@ -126,7 +126,7 @@ class OperationRepository:
                 .values(status=StatusType.PROCESSING)
                 .returning(OperationOrm)
             )
-            result = await self.session.execute(stmt)
+            result = await self._session.execute(stmt)
             updated_operation = result.scalar_one_or_none()
 
             if updated_operation is not None:
@@ -137,13 +137,13 @@ class OperationRepository:
                     toStatus=StatusType.PROCESSING,
                     message="Submit accepted, provider call scheduled",
                 )
-                self.session.add(event)
+                self._session.add(event)
                 operation_response = OperationSingleResponse.model_validate(updated_operation)
                 is_submitted_response = True
 
             else:
                 query = select(OperationOrm).where(OperationOrm.operationId == operation_id)
-                res = await self.session.execute(query)
+                res = await self._session.execute(query)
                 operation = res.scalar_one_or_none()
                 if operation is None:
                     return OperationSubmitResponse(
@@ -158,7 +158,7 @@ class OperationRepository:
                     toStatus=operation.status,
                     message="Duplicate submit ignored",
                 )
-                self.session.add(event)
+                self._session.add(event)
                 operation_response = OperationSingleResponse.model_validate(operation)
                 is_submitted_response = False
 
@@ -168,7 +168,7 @@ class OperationRepository:
             )
 
         except SQLAlchemyError as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise DatabaseError(
                 detail="Failed to submit operation",
@@ -176,7 +176,7 @@ class OperationRepository:
             ) from e
 
         except ValidationError as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise ValidationObjectError(
                 detail="Failed to validate object before returning",
@@ -184,12 +184,53 @@ class OperationRepository:
             ) from e
 
         except Exception as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise BaseAppError(
                 detail="Unexpected error while submitting operation",
                 extra=extra,
             ) from e
 
-        await self.session.commit()
+        await self._session.commit()
         return operation_submit_response
+
+    async def get_for_provider_call(self, operation_id: str) -> OperationSingleResponse | None:
+        service_name = str(self.__class__.__name__)
+        extra = {"service": service_name}
+        logger.debug("Getting operation for provider call", extra=extra)
+
+        try:
+            operation = await self._session.get(OperationOrm, operation_id)
+            if operation is not None:
+                return OperationSingleResponse.model_validate(operation)
+            return None
+
+        except SQLAlchemyError as e:
+            await self._session.rollback()
+            extra.update(original_error=str(e), content=str(e.__class__.__name__))
+            logger.error(
+                "Unexpected database error while operation for provider call",
+                exc_info=e.__cause__,
+                extra=extra,
+            )
+            return None
+
+        except ValidationError as e:
+            await self._session.rollback()
+            extra.update(original_error=str(e), content=str(e.__class__.__name__))
+            logger.error(
+                "Validation error while getting operation for provider call",
+                exc_info=e.__cause__,
+                extra=extra,
+            )
+            return None
+
+        except Exception as e:
+            await self._session.rollback()
+            extra.update(original_error=str(e), content=str(e.__class__.__name__))
+            logger.error(
+                "Something wrong occurred while getting operation for provider call",
+                exc_info=e.__cause__,
+                extra=extra,
+            )
+            return None

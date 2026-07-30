@@ -20,7 +20,7 @@ def setup_logging() -> None:
     )
     handler.setFormatter(JsonFormatter("%(asctime)s - %(name)s - %(levelname)s -%(service)s - %(message)s"))
     logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG if settings.env.logging_level == "debug" else logging.INFO)
 
     logging.getLogger("watchfiles").setLevel(logging.WARNING)
 

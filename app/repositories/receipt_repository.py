@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class ReceiptRepository:
     def __init__(self, session: AsyncSession):
-        self.session = session
+        self._session = session
 
     async def post_receipt(self, receipt_request: ReceiptRequest) -> ReceiptOutcome | None:
         service_name = str(self.__class__.__name__)
@@ -26,7 +26,7 @@ class ReceiptRepository:
             query = (
                 select(OperationOrm).where(OperationOrm.operationId == receipt_request.operationId).with_for_update()
             )
-            res = await self.session.execute(query)
+            res = await self._session.execute(query)
             operation = res.scalar_one_or_none()
 
             if operation is None:
@@ -49,10 +49,10 @@ class ReceiptRepository:
                         type=EventType.RECEIPT_PAYMENT_ID_MISMATCH,
                         fromStatus=operation.status,
                         toStatus=operation.status,
-                        message=f"Mismatched provider payment ID={receipt_request.providerPaymentId}",
+                        message=f"Mismatched provider payment ID={receipt_request.providerPaymentId!s}",
                     )
-                    self.session.add(event)
-                    await self.session.flush()
+                    self._session.add(event)
+                    await self._session.flush()
                     receipt_record = ReceiptRecordOrm(
                         operationId=operation.operationId,
                         providerPaymentId=receipt_request.providerPaymentId,
@@ -61,10 +61,10 @@ class ReceiptRepository:
                         occurredAt=receipt_request.occurredAt,
                         eventId=event.eventId,
                     )
-                    self.session.add(receipt_record)
+                    self._session.add(receipt_record)
 
                 except SQLAlchemyError as e:
-                    await self.session.rollback()
+                    await self._session.rollback()
                     extra.update(original_error=str(e))
                     raise DatabaseError(
                         detail="Failed to submit operation",
@@ -72,7 +72,7 @@ class ReceiptRepository:
                     ) from e
 
                 except ValidationError as e:
-                    await self.session.rollback()
+                    await self._session.rollback()
                     extra.update(original_error=str(e))
                     raise ValidationObjectError(
                         detail="Failed to validate object before returning",
@@ -80,14 +80,14 @@ class ReceiptRepository:
                     ) from e
 
                 except Exception as e:
-                    await self.session.rollback()
+                    await self._session.rollback()
                     extra.update(original_error=str(e))
                     raise BaseAppError(
                         detail="Unexpected error while submitting operation",
                         extra=extra,
                     ) from e
 
-                await self.session.commit()
+                await self._session.commit()
                 return ReceiptOutcome.MISMATCH  # 409
 
             # operation already finished
@@ -102,10 +102,11 @@ class ReceiptRepository:
                         type=event_type,
                         fromStatus=operation.status,
                         toStatus=operation.status,
-                        message=f"Receipt result={receipt_request.result} while operation already {operation.status}",
+                        message=f"Receipt result={receipt_request.result.value} "
+                        f"while operation already {operation.status.value}",
                     )
-                    self.session.add(event)
-                    await self.session.flush()
+                    self._session.add(event)
+                    await self._session.flush()
                     receipt_record = ReceiptRecordOrm(
                         operationId=operation.operationId,
                         providerPaymentId=receipt_request.providerPaymentId,
@@ -114,10 +115,10 @@ class ReceiptRepository:
                         occurredAt=receipt_request.occurredAt,
                         eventId=event.eventId,
                     )
-                    self.session.add(receipt_record)
+                    self._session.add(receipt_record)
 
                 except SQLAlchemyError as e:
-                    await self.session.rollback()
+                    await self._session.rollback()
                     extra.update(original_error=str(e))
                     raise DatabaseError(
                         detail="Failed to submit operation",
@@ -125,7 +126,7 @@ class ReceiptRepository:
                     ) from e
 
                 except ValidationError as e:
-                    await self.session.rollback()
+                    await self._session.rollback()
                     extra.update(original_error=str(e))
                     raise ValidationObjectError(
                         detail="Failed to validate object before returning",
@@ -133,14 +134,14 @@ class ReceiptRepository:
                     ) from e
 
                 except Exception as e:
-                    await self.session.rollback()
+                    await self._session.rollback()
                     extra.update(original_error=str(e))
                     raise BaseAppError(
                         detail="Unexpected error while submitting operation",
                         extra=extra,
                     ) from e
 
-                await self.session.commit()
+                await self._session.commit()
                 return ReceiptOutcome.IGNORED  # 204
 
             # applying receipt
@@ -163,12 +164,12 @@ class ReceiptRepository:
                 type=EventType.RECEIPT_APPLIED,
                 fromStatus=from_status,
                 toStatus=incoming_status_final,
-                message=f"Receipt applied: {receipt_request.result}",
+                message=f"Receipt applied: {receipt_request.result.value}",
             )
             events_to_add.append(apply_event)
 
-            self.session.add_all(events_to_add)
-            await self.session.flush()
+            self._session.add_all(events_to_add)
+            await self._session.flush()
 
             receipt_record = ReceiptRecordOrm(
                 operationId=operation.operationId,
@@ -178,10 +179,10 @@ class ReceiptRepository:
                 occurredAt=receipt_request.occurredAt,
                 eventId=apply_event.eventId,
             )
-            self.session.add(receipt_record)
+            self._session.add(receipt_record)
 
         except SQLAlchemyError as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise DatabaseError(
                 detail="Failed to submit operation",
@@ -189,7 +190,7 @@ class ReceiptRepository:
             ) from e
 
         except ValidationError as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise ValidationObjectError(
                 detail="Failed to validate object before returning",
@@ -197,12 +198,12 @@ class ReceiptRepository:
             ) from e
 
         except Exception as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise BaseAppError(
                 detail="Unexpected error while submitting operation",
                 extra=extra,
             ) from e
 
-        await self.session.commit()
+        await self._session.commit()
         return ReceiptOutcome.APPLIED  # 204

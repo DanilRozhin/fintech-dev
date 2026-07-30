@@ -9,17 +9,17 @@ from app.schemas import ReceiptRequest
 
 class ReceiptService:
     def __init__(self, session: AsyncSession):
-        self.receipt_repo = ReceiptRepository(session=session)
+        self._receipt_repo = ReceiptRepository(session=session)
 
     async def post_receipt(self, receipt_request: ReceiptRequest) -> ReceiptOutcome:
-        response = await self.receipt_repo.post_receipt(receipt_request=receipt_request)
+        response = await self._receipt_repo.post_receipt(receipt_request=receipt_request)
         if response is None:
             raise OperationError(
                 detail="Operation with this ID not found",
                 status_code=status.HTTP_404_NOT_FOUND,
                 extra={
                     "service": "operation_service",
-                    "sub": receipt_request.operation_id,
+                    "sub": receipt_request.operationId,
                 },
             )
         if response == ReceiptOutcome.MISMATCH:

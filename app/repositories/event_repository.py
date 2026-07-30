@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class EventRepository:
     def __init__(self, session: AsyncSession):
-        self.session = session
+        self._session = session
 
     async def get_operation_events(self, operation_id: str) -> list[OperationEventSingle]:
         service_name = str(self.__class__.__name__)
@@ -27,7 +27,7 @@ class EventRepository:
                 .where(OperationEventOrm.operationId == operation_id)
                 .order_by(asc(OperationEventOrm.eventId))
             )
-            res = await self.session.execute(query)
+            res = await self._session.execute(query)
             events = res.scalars().all()
             if not events:
                 return []
@@ -41,7 +41,7 @@ class EventRepository:
             ) from e
 
         except ValidationError as e:
-            await self.session.rollback()
+            await self._session.rollback()
             extra.update(original_error=str(e))
             raise ValidationObjectError(
                 detail="Failed to validate object before returning",

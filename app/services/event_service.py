@@ -8,11 +8,11 @@ from app.schemas import OperationEventResponse
 
 class EventService:
     def __init__(self, session: AsyncSession):
-        self.event_repo = EventRepository(session=session)
-        self.operation_repo = OperationRepository(session=session)
+        self._event_repo = EventRepository(session=session)
+        self._operation_repo = OperationRepository(session=session)
 
     async def get_operation_events(self, operation_id: str) -> OperationEventResponse:
-        operation = await self.operation_repo.get_operation_by_id(operation_id=operation_id)
+        operation = await self._operation_repo.get_operation_by_id(operation_id=operation_id)
         if not operation:
             raise OperationError(
                 detail="Operation with this ID not found",
@@ -22,5 +22,5 @@ class EventService:
                     "sub": operation_id,
                 },
             )
-        events = await self.event_repo.get_operation_events(operation_id=operation_id)
+        events = await self._event_repo.get_operation_events(operation_id=operation_id)
         return OperationEventResponse(events=events)
