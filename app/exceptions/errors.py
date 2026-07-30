@@ -52,3 +52,15 @@ class ValidationObjectError(BaseAppError):
         extra: dict[str, Any] | None = None,
     ):
         super().__init__(detail=detail, status_code=status_code, extra=extra)
+
+
+class ProviderPaymentIdMismatchError(BaseAppError):
+    """Provider payment id mismatch error"""
+
+    def __init__(
+        self,
+        detail: str = "Provider Payment ID mismatch error",
+        status_code: int = status.HTTP_409_CONFLICT,
+        extra: dict[str, Any] | None = None,
+    ):
+        super().__init__(detail=detail, status_code=status_code, extra=extra)
