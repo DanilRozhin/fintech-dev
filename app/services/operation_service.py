@@ -8,10 +8,10 @@ from app.schemas import OperationCreate, OperationSingleResponse, OperationSubmi
 
 class OperationService:
     def __init__(self, session: AsyncSession):
-        self.operation_repo = OperationRepository(session=session)
+        self._operation_repo = OperationRepository(session=session)
 
     async def create_operation(self, operation_request: OperationCreate) -> OperationSingleResponse:
-        operation_response = await self.operation_repo.create_operation(operation_request=operation_request)
+        operation_response = await self._operation_repo.create_operation(operation_request=operation_request)
         if operation_response is None:
             raise OperationError(
                 detail="Operation with this ID already exists",
@@ -24,7 +24,7 @@ class OperationService:
         return operation_response
 
     async def get_operation_by_id(self, operation_id: str) -> OperationSingleResponse:
-        operation = await self.operation_repo.get_operation_by_id(operation_id=operation_id)
+        operation = await self._operation_repo.get_operation_by_id(operation_id=operation_id)
         if operation is None:
             raise OperationError(
                 detail="Operation with this ID not found",
@@ -37,7 +37,7 @@ class OperationService:
         return operation
 
     async def submit_operation(self, operation_id: str) -> OperationSubmitResponse:
-        response = await self.operation_repo.submit_operation(operation_id=operation_id)
+        response = await self._operation_repo.submit_operation(operation_id=operation_id)
         if response.operation is None:
             raise OperationError(
                 detail="Operation with this ID not found",

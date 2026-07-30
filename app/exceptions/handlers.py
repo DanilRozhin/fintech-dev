@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ProviderPaymentIdMismatchError)
     def provider_payment_id_mismatch_error_handler(req: Request, exc: ProviderPaymentIdMismatchError) -> JSONResponse:
-        logger.error(
+        logger.warning(
             msg=exc.detail,
             exc_info=exc.__cause__,
             extra={
@@ -59,7 +59,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(OperationError)
     def operation_error_handler(req: Request, exc: OperationError) -> JSONResponse:
-        logger.error(
+        logger.warning(
             msg=exc.detail,
             exc_info=exc.__cause__,
             extra={
