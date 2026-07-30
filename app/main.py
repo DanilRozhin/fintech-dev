@@ -33,10 +33,11 @@ async def lifespan(app_: FastAPI):
 
     # shutdown
 
+    logger.info("Shutting down: waiting for in-flight provider calls...")
     await wait_for_all_tasks()
     await app.state.provider_client.close()
     await db_helper.dispose()
-    logger.info("Finishing application", extra=extra)
+    logger.info("Shutdown complete", extra=extra)
 
 
 app = FastAPI(lifespan=lifespan)
