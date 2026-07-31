@@ -93,6 +93,64 @@ docker compose up --build
 | Несовпадающий `providerPaymentId`               | `409 Conflict`                                                                                                      |
 | Перезапуск сервиса во время `PROCESSING`        | При старте отправка возобновляется с тем же `Idempotency-Key`                                                       |
 
+## Полный сквозной сценарий
+
+```
+curl http://localhost:8080/health
+# {"status": "ok"}
+```
+
+```
+curl -X POST http://localhost:8080/operations \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operationId": "op-123",
+    "amount": "1000.00",
+    "currency": "RUB",
+    "description": "Оплата заказа"
+  }'
+
+# 201 created
+```
+
+```
+curl -X POST http://localhost:8080/operations/op-123/submit
+
+# 202 Accepted, status: PROCESSING
+```
+
+Callback-квитанция отправляется провайдером автоматически
+
+```
+curl -X POST http://localhost:8080/receipts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "providerPaymentId": "pay-123",
+    "operationId": "op-123",
+    "result": "COMPLETED",
+    "message": "Payment completed",
+    "occurredAt": "2026-07-07T12:00:00Z"
+  }'
+
+# 204 No Content
+```
+
+Проверка финального статуса:
+
+```
+curl http://localhost:8080/operations/op-123
+```
+
+Ожидаемый ответ: status: `COMPLETED`, `providerPaymentId` заполнен.
+
+Повторный submit
+
+```
+curl -X POST http://localhost:8080/operations/op-123/submit
+
+# 200 OK, статус не меняется
+```
+
 ## Тесты
 
 Для запуска тестов требуется установка зависимостей и поднятие тестовой базы данных.
