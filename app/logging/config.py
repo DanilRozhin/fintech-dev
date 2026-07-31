@@ -2,6 +2,7 @@ import logging
 import sys
 from logging import StreamHandler
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 from pythonjsonlogger.json import JsonFormatter
 
@@ -9,6 +10,9 @@ from app.core.config import settings
 
 
 def setup_logging() -> None:
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+
     logger = logging.getLogger()
     logger.handlers.clear()
     filename = "logs/app_production.log" if settings.env.environment == "prod" else "logs/app_development.log"
