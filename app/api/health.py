@@ -8,7 +8,7 @@ health_router = APIRouter(tags=["health"])
 
 
 @health_router.get(
-    "/",
+    "",
     status_code=status.HTTP_200_OK,
 )
 async def check_health(
