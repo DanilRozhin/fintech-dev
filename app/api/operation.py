@@ -20,7 +20,7 @@ operation_router = APIRouter(
 )
 
 
-@operation_router.post("/", status_code=status.HTTP_201_CREATED, response_model=OperationSingleResponse)
+@operation_router.post("", status_code=status.HTTP_201_CREATED, response_model=OperationSingleResponse)
 async def create_operation(
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     operation_request: OperationCreate,

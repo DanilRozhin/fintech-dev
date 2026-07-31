@@ -3,7 +3,6 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.clients import ProviderClient
 from app.core.background_tasks import track_task
 from app.database import db_helper
 from app.database.enums import EventType, StatusType, TriggerType
@@ -13,7 +12,7 @@ from app.services import run_provider_call_in_background
 logger = logging.getLogger(__name__)
 
 
-async def run_recovery(provider_client: ProviderClient) -> None:
+async def run_recovery(provider_client) -> None:
     async with db_helper.session_factory() as session:
         stuck_operation_ids = await _mark_and_collect_stuck_operations(session)
 

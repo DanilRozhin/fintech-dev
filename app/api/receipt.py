@@ -17,7 +17,7 @@ receipt_router = APIRouter(
 
 
 @receipt_router.post(
-    "/",
+    "",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def post_receipt(

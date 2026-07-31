@@ -18,3 +18,4 @@ __pypackages__/
 
 *.ps1
 query
+.coverage
