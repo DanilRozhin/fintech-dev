@@ -1,0 +1,8 @@
+[formatting]
+column_width = 120
+indent_string = "    "
+array_trailing_comma = true
+align_comments = true
+
+array_auto_expand = true
+array_auto_collapse = false

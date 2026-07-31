@@ -1,0 +1,22 @@
+services:
+  postgres-test:
+    image: postgres:15.12
+    container_name: fintech_db_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${TEST__APP_CONFIG__DB__NAME}
+      POSTGRES_USER: ${TEST__APP_CONFIG__DB__USER}
+      POSTGRES_PASSWORD: ${TEST__APP_CONFIG__DB__PASSWORD}
+    volumes:
+      - postgres_data_test:/var/lib/postgresql/data
+    ports:
+      - "${TEST__APP_CONFIG__DB__PORT}:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "${TEST__APP_CONFIG__DB__USER}", "-d", "${TEST__APP_CONFIG__DB__NAME}" ]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  postgres_data_test:

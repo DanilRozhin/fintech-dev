@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:15.12
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${APP_CONFIG__DB__NAME}
+      POSTGRES_USER: ${APP_CONFIG__DB__USER}
+      POSTGRES_PASSWORD: ${APP_CONFIG__DB__PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${APP_CONFIG__DB__PORT}:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${APP_CONFIG__DB__USER}", "-d", "${APP_CONFIG__DB__NAME}"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+    networks:
+      - app-network
+
+  candidate-service:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_CONFIG__DB__HOST: postgres
+      PROVIDER_URL: http://provider-simulator:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  provider-simulator:
+    image: ghcr.io/fintech-dev-lab/internship-provider-simulator:v0.2.0
+    restart: unless-stopped
+    environment:
+      CALLBACK_URL: http://candidate-service:8080/receipts
+    ports:
+      - "8081:8081"
+    depends_on:
+      - candidate-service
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
